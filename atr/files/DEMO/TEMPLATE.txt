@@ -1,0 +1,33 @@
+Party:   Silly Venture 2k24 WE
+Compo:   ATARI XL/XE DEMO COMPO
+Title:   ???
+Author:  ???
+
+         ??? (code)
+         ??? (gfx)
+         ??? (fnt)
+         ??? (msx)
+
+Info:
+         Supports PAL and NTSC
+         Requires BASIC
+         Requires Atari XL OS Rev. 2
+         Requires 128K RAM
+         Requires 256K RAM
+         Requires 320K RAM
+         Requires 576K RAM
+         Requires 1MB RAM
+         No sound
+         Mono
+         Mono, 2nd POKEY supported
+         Stereo, 2nd POKEY required
+         Requires VBXE video board
+         SillyPack compatible version
+         Now runs from DOS 2.5
+         Now RESET causes a cold start
+         Now runs reliably on real
+         hardware and from DOS 2.5
+
+Tools:   Raster Music Tracker 1.28
+         Raster Music Tracker 1.34
+

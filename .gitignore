@@ -1,0 +1,7 @@
+*.lst
+*.lab
+*.atdbg
+*.ods#
+/input
+/*.atr
+/atr/files/AUTORUN.AR0

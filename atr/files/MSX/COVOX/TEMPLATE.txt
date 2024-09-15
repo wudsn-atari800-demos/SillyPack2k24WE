@@ -1,0 +1,10 @@
+Party:   Silly Venture 2k24 WE
+Compo:   ATARI XL/XE COVOX MSX COMPO
+Title:   ???
+Author:  ??? ???
+         aka ???/???
+Format:  NEOTRACKER
+Size:    ???K
+
+Info:    Requires 320K RAM
+         Requires COVOX card at $D700

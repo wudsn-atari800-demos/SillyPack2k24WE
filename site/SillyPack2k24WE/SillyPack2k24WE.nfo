@@ -1,0 +1,41 @@
+              SILLY VENTURE 2k24 WE____              _____
+    _____  __ 8-BIT RESULTS PACK___\  /___      _____|   |
+  _/  __/__\/____  ____ ____  __\_  \/   /____ _\    |   |____._ ______ ______
+ _\_____  \  |  /__|  /_\   \/   /      / _  /   \   |  __/   | \  __  \  _  /
+ |   \/   /  | /   \ /   \_    _/ \    /  \_/ \ \    |  /  \     \ \/__/_ \_/ \
+ |_______/___|_____/_____/|____|   \  /\______/__\___|_____/_____/_/\___/_____/
+ !NE7        ___________     _______\/__
+ 
+ 
+   ? bonuses - ? songs - ? graphics - ? intros - ? demos - ? games - ? wilds
+
+ This pack contains a disk image in MyDos format with all Atari 8-bit releases
+ of Silly Venture 2k2x Winter Edition. I felt they deserved a good presentation,
+ esp. the graphics and music releases for which no art pack/music disk exists.
+ 
+ This pack comes with a results viewer, which also acts as a menu from where
+ you can directly start all releases and read the readmes.
+ 
+ The menu remains memory resident, so you don't have to load it again every
+ time. This makes watching the graphics entries and listening to the music
+ entries much more fun, especially on a real machine.
+ If you use loadable speeders, you must use the memory area of $500-$5ff.
+ For "SIO2SD TURBO", press "OPTION+START" on the boot screen.
+
+ These are the controls for the menu: 
+ * Pressing any key while the menu loads takes you to the DOS shell.
+ * Pressing RESET in the menu performs a cold start.
+ * Pressing RESET in while a release is running returns to the menu, if possible.
+ * Further controls are displayed in the menu itself.
+
+ I have patched the following releases for your seamless pleasure:
+
+ * ?                           - SillyPack compatible version
+ * ?                           - Now runs from DOS 2.5
+
+
+ Original ASCII artwork by sK!, music "???" by ???, menu by JAC!
+
+ This download also contains a pre-configured Altirra installation.
+ Just extract the archive to a folder and run "SillyPack2k2xWE.bat".
+ 

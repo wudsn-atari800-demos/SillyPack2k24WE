@@ -1,0 +1,480 @@
+HIRES	equ 0
+
+displayer     equ $3800
+pixels        equ $8000
+packed_pixels equ $9000
+palette       equ $3d00
+caption       equ $3cd8
+
+	org displayer
+
+;
+; Non-Interlaced pic displayer
+; 
+; Uses Method 1 - do nothing on non-interlace fields
+;
+dosvec  equ $0a
+brkflag	equ $11
+attract	equ $4d
+ramtop	equ $6a
+ztemp1	equ $e0
+ztemp2	equ $e2
+ztemp3	equ $e4
+screen1	equ $9c40 ; ***** Temporarily use normal screen RAM *****
+vscount	equ $04 ; must be zero-page (timing)
+sdmctl	equ $22f
+sdslst	equ $230
+gprior	equ $26f
+chbas   equ $2f4
+ch      equ $2fc
+ichid	equ $340
+iccom	equ $342
+icba	equ $344
+icbl	equ $348
+icax1	equ $34a
+icax2	equ $34b
+;
+pal	equ $d014
+colpf1	equ $d017
+colpf2	equ $d018
+colbak	equ $d01a
+prior	equ $d01b
+consol	equ $d01f
+porta	equ $d300
+pactl	equ $d302
+dmactl	equ $d400
+dlistl	equ $d402
+dlisth	equ $d403
+hscrol	equ $d404
+vscrol	equ $d405
+chbase	equ $d409
+wsync	equ $d40a
+vcount	equ $d40b
+nmien	equ $d40e
+
+ciov    equ $e456
+;
+; VBXE stuff
+vbxe	equ $cb ; Pointer to VBXE page (=$d600 or $d700)
+vbxe_bank equ $cd ; Current bank in VBXE
+;
+vb_video_control equ $40
+vb_xdl_adr	equ $41
+vb_csel	equ $44 ; Color select
+vb_psel equ $45 ; Palette select
+vb_cr	equ $46
+vb_cg	equ $47
+vb_cb	equ $48 ; RGB registers
+
+vb_memac_b_control equ $5d ; Control for old banking scheme
+vb_memac_control equ $5e ; MEMAC A Control
+vb_memac_bank_sel equ $5f ; Bank select for MEMAC A
+
+;
+; FlashPack variables
+;
+fp21_ff	equ	$fc
+fp21_bt	equ	$fd
+fp21_ad	equ	$fe
+
+;
+; Jump tables
+;
+	jmp init1
+	jmp init_palette
+	jmp unpack_inc_bank
+	jmp inc_bank
+	jmp display_pic
+	jmp display_pic
+;
+
+dl_vbfound
+	dta  $70,$70,$70,$70,$70
+	dta  $46
+	dta  a(txt_vbfound)
+	dta  $41
+	dta  a(dl_vbfound)
+txt_vbfound
+	dta d" VBXE FOUND AT $D640"
+foundat_txt equ *-3
+;
+; DList for when picture is displayed
+;
+dl_main
+:28 dta  $70
+	dta  $60
+	dta  $c2 ; LMS 2
+	dta  a(caption)
+	dta  0,$41
+	dta a(dl_main)
+
+;
+; XDLs here
+;
+xdl1
+	dta  $62 ; overlay, repeat, set overlay adr
+	ift HIRES
+	dta  $98 ; set attrib, hr, end XDL
+	els
+	dta  $88 ; set attrib, end XDL
+	eif
+	dta  239 ; Repeat 239 for 240 pixel screen height
+	dta  $00,$20,$00 ; First overlay Field 0 starts @ $02000 in VBXE RAM
+	dta a(320) ; Step size 320 bytes for no interlace
+	dta  $11 ; Attrib:  Normal width, use palette 1
+	dta  $DF ; Overlay has priority over all except PF1
+	dta  0,0 ; filler
+xdl_length equ *-xdl1
+
+	ert *>displayer+$400
+
+fp21_dep1
+	tax
+	beq	fp21_exit
+	lda	#$7f
+fp21_dep2
+	bcc	*+3
+	inx
+	inx
+	sta	fp21_ad
+fp21_dep3
+	lda	(fp21_ad),y
+fp21_put
+	sta	$8080,y
+	iny
+	bne	fp21_dep4
+	inc	fp21_ad+1
+	inc	fp21_put+2
+fp21_dep4
+	dex
+	bne	fp21_dep3
+	asl	fp21_bt
+	bne	fp21_dep7
+	asl	fp21_ff
+	bne	fp21_dep5
+
+fp21_start
+	sec
+	jsr	fp21_get
+	rol	@
+	sta	fp21_ff
+fp21_dep5
+	lda	#1
+	bcc	fp21_dep6
+	jsr	fp21_get
+	rol	@
+fp21_dep6
+	sta	fp21_bt
+fp21_dep7
+	jsr	fp21_get
+	ldx	#1
+	bcc	fp21_put
+	lsr	@
+	bne	fp21_dep2
+	jsr	fp21_get
+	bcs	fp21_dep1
+	tay
+	jsr	fp21_get
+	sta	fp21_ad+1
+	sta	fp21_put+2
+	bcc	fp21_dep7 !
+
+fp21_get
+	lda	packed_pixels
+	inc	fp21_get+1
+	bne	fp21_ret
+	inc	fp21_get+2
+fp21_ret
+fp21_exit
+	rts
+
+fieldswap  dta  0
+choffset   dta  0
+savesdmctl dta  0
+load_count  dta  2 ; load counter for 4K segments
+
+; mpindex	dta  0
+; message_end_ptr dta a(0)
+; scrollspeed	dta  0
+; message1_fine	dta  0
+	dta a(0,0,0,0,0,0,0,0)
+;
+; First DLI - enable normal screen DMA
+;
+dli1
+	pha
+	lda #$22
+	sta sdmctl
+	sta wsync
+	sta dmactl
+	lda #<dli_last
+	sta $200
+	lda #>dli_last
+	sta $201
+	pla
+	rti
+;
+; DLI for bottom of screen - enact Scanline 240 bug
+;
+dli_last
+	rti
+;
+xdl_table
+	dta  0,0,0,0 ; first xdl at $000000
+
+;
+; INIT segment for multipart load of BMPs for VBXE
+;
+init1
+	lda #$40
+	sta nmien
+	lda #12
+	sta 709
+	sta colpf1
+	lda #0
+	sta 712
+	sta colbak
+	sta vbxe
+	sta vbxe+1 ; Assume no VBXE installed for now
+	ldy #$d6
+	ldx $d740
+	cpx #$10
+	beq found_d7
+	ldx $d640
+	cpx #$10
+	beq found_d6
+; Not found - display message
+	ldx #0
+	lda #9
+	sta $342,x
+	sta $349,x
+	lda #<txt_vbnotfound
+	sta $344,x
+	lda #>txt_vbnotfound
+	sta $345,x
+	jsr ciov
+	jmp (dosvec)
+txt_vbnotfound
+	dta c"VBXE not found.",$9b
+
+found_d7
+	inc foundat_txt
+	iny
+found_d6
+	sty vbxe+1 ; Setup pointer in ZP to VBXE page base
+	ldx #<dl_vbfound
+	ldy #>dl_vbfound
+	stx sdslst
+	sty sdslst+1
+	lda #0
+	ldy #vb_video_control
+	sta (vbxe),y ; Clear any current VBXE modes
+	ldy #vb_memac_b_control
+	sta (vbxe),y ; Clear any MEMAC_B access modes
+	ldy #vb_memac_control
+	lda #$88
+	sta (vbxe),y ; Set MEMAC_CONTROL to window at $8000-8FFF, CPU access only
+	ldy #vb_memac_bank_sel
+	lda #$80
+	sta (vbxe),y ; Set window at $000000 in VBXE RAM
+	ldx #xdl_length
+copyxdl
+	lda xdl1,x
+	sta $8000,x
+	dex
+	bpl copyxdl ; Copy XDLs to VBXE @ $0000 and $0200
+	ldy #1
+clear_vbxe_ram
+	jsr set_vbxe_bank ; Set to bank 2
+	lda #0
+	tax
+clear_vbxe2
+	sta pixels+$000,x
+	sta pixels+$100,x
+	sta pixels+$200,x
+	sta pixels+$300,x
+	sta pixels+$400,x
+	sta pixels+$500,x
+	sta pixels+$600,x
+	sta pixels+$700,x
+	sta pixels+$800,x
+	sta pixels+$900,x
+	sta pixels+$a00,x
+	sta pixels+$b00,x
+	sta pixels+$c00,x
+	sta pixels+$d00,x
+	sta pixels+$e00,x
+	sta pixels+$f00,x
+	inx
+	bne clear_vbxe2
+	iny
+	cpy #21
+	bcc clear_vbxe_ram ; Clear ~ 80K of Video RAM
+	
+	lda #$ff
+	sta ch
+	rts ; Continue picture load
+; 
+; INIT segment for Palette setup
+;
+init_palette
+	ldy #vb_psel
+	lda #1
+	sta (vbxe),y ; Set palette 1
+	ldy #vb_csel
+	lda #0
+	sta (vbxe),y ; Select colour 1
+	ldx #0
+vbxe_setcolours1
+	lda palette+$000,x
+	ldy #vb_cr
+	sta (vbxe),y ; set Red
+	lda palette+$001,x
+	iny
+	sta (vbxe),y ; Set Green
+	lda palette+$002,x
+	iny
+	sta (vbxe),y ; Set Blue
+	inx
+	inx
+	inx
+	cpx #2
+	bne vbxe_setcolours1
+	ldx #0
+vbxe_setcolours2
+	lda palette+$102,x
+	ldy #vb_cr
+	sta (vbxe),y ; Set Red
+	lda palette+$103,x
+	iny
+	sta (vbxe),y ; G
+	lda palette+$104,x
+	iny
+	sta (vbxe),y ; B
+	inx
+	inx
+	inx
+	cpx #2
+	bne vbxe_setcolours2
+	ldx #0
+vbxe_setcolours3
+	lda palette+$204,x
+	ldy #vb_cr
+	sta (vbxe),y ; R
+	lda palette+$205,x
+	iny
+	sta (vbxe),y ; G
+	lda palette+$206,x
+	iny
+	sta (vbxe),y ; Set Blue
+	inx
+	inx
+	inx
+	cpx #$fc
+	bne vbxe_setcolours3
+	ldy #2
+	sty vbxe_bank
+	jsr set_vbxe_bank ; Set to bank 2 for start of bitmap data
+	lda #0
+	ldy #vb_xdl_adr
+	sta (vbxe),y
+	iny
+	sta (vbxe),y
+	iny
+	sta (vbxe),y ; Set XDL address to $0000
+	lda #7
+	ldy #vb_video_control
+	sta (vbxe),y ; Set Video Control
+	rts
+;
+; Unpack segment of pixel data into RAMAC window
+; and increment VBXE MEMAC Bank, used during pic load.
+; 4K segments load at $8000-8FFF into RAMAC window
+;
+unpack_inc_bank
+	lda #<packed_pixels
+	sta fp21_get+1
+	lda #>packed_pixels
+	sta fp21_get+2
+	jsr fp21_start
+inc_bank
+	lda ch
+	cmp #$ff  ; Any key?
+	bne display_pic_stop
+	ldy vbxe_bank
+	iny
+	sty vbxe_bank
+	jsr set_vbxe_bank
+	dec load_count
+	bne inc_bank_end
+	ldx #<dl_main
+	ldy #>dl_main
+	stx sdslst
+	sty sdslst+1
+inc_bank_end
+	rts
+
+;
+; Set VBXE MEMAC Bank.  Y=bank number
+;
+set_vbxe_bank
+	tya
+	pha
+	ora #$80
+	ldy #vb_memac_bank_sel
+	sta (vbxe),y
+	pla
+	tay
+	rts
+;
+; Display picture
+;
+display_pic
+	ldx #<dl_main
+	ldy #>dl_main
+	stx sdslst
+	sty sdslst+1
+	lda #12
+	sta 709
+	ldy #vb_xdl_adr
+	lda #0
+	sta 712
+	sta (vbxe),y+
+	sta (vbxe),y+
+	sta (vbxe),y
+display_pic_wait
+	lda ch
+	cmp #$ff   ;Any key?
+	beq display_pic_continue
+
+display_pic_stop
+	lda #0
+	tax
+	ldy #vb_video_control
+	sta (vbxe),y ; Clear any current VBXE modes
+	ldy #vb_memac_b_control
+	sta (vbxe),y ; Clear memory access window B
+	ldy #vb_memac_control
+	sta (vbxe),y ; Clear memory access window A
+	lda #12
+	sta $0342,x
+	jsr ciov
+	lda #3
+	sta $0342,x
+	sta $0349,x
+	lda #<ename
+	sta $0344,x
+	lda #>ename
+	sta $0345,x
+	jsr ciov
+	lda #$ff
+	sta ch
+	jmp (dosvec)
+ename dta c'E:',$9b
+
+display_pic_continue
+	jmp display_pic_wait ; Just loop for now
+;
+	ert *>caption
+
+	ini displayer
