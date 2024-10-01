@@ -21,7 +21,6 @@
 	icl "..\..\asm\Fixes.asm"
 
 rtclck	= $12
-;neo_key	= $a809	;NeoTracker 1.7
 neo_key	= $a819	;NeoTracker 1.8
 
 	m_disable_basic
@@ -32,8 +31,7 @@ neo_key	= $a819	;NeoTracker 1.8
 	org $2000
 	opt h-
 
-;	ins "NEO.com"
-	ins "NEO18.com"
+	ins "NEO18D7.com"
 
 	opt h+
 
