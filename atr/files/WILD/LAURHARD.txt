@@ -1,0 +1,28 @@
+Party:   Silly Venture 2k24 WE
+Compo:   WILD COMPO
+Type:    ???
+Title:   ???
+Author:  ???
+
+         ??? (code)
+         ??? (gfx)
+         ??? (fnt)
+         ??? (msx)
+
+Info:
+         PAL and NTSC supported
+         Requires 128K RAM
+         Requires 256K RAM
+         Requires 320K RAM
+         No sound
+         Mono
+         Mono, 2nd POKEY supported
+         Stereo, 2nd POKEY required
+         Requires VBXE video board
+         SillyPack compatible version
+         Now runs from DOS 2.5
+         Now RESET causes a cold start
+         Now runs reliably on real
+         hardware and from DOS 2.5
+
+Tools:   Raster Music Tracker 1.28

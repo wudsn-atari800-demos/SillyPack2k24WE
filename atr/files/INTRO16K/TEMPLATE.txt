@@ -20,7 +20,7 @@ Info:
          Requires VBXE video board
          SillyPack compatible version
          Now runs from DOS 2.5
-         Now RESET causes a cold start
+         Now RESET causes cold start
          Now runs reliably on real
          hardware and from DOS 2.5
 

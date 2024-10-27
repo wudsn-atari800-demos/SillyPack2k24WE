@@ -17,7 +17,7 @@
 ;	1F40-...
 
 	.macro m_fix_vu_player_20
-	.echo "Fixed: Now loads from DOS 2.5. VU player 2.0 loaded to ",:2," and RESET causes a cold start."
+	.echo "Fixed: Now runs from DOS 2.5. VU player 2.0 loaded to ",:2," and RESET causes a cold start."
 
 p1	= $80
 p2	= $82

@@ -1,0 +1,19 @@
+Party:   Silly Venture 2k24 WE
+Compo:   n/a
+Title:   SV24WE Invitro
+Author:  Ralf Patschke
+         aka PPs (code,conversion)
+         Marcin Dworaczek
+         aka Moonie (original gfx)
+         Noud van Miltenburg
+         aka Oni/Poo-Brain
+         (origianl deadline logo)
+         Christian Duesterhoeft
+         aka Buddy (msx)
+
+Info:    Mono, 2nd POKEY supported
+         Supports PAL and NTSC
+
+Let's have a great party and join the
+Silly Venture 24 winter edition!
+Stay ATARI!
